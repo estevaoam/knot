@@ -1,5 +1,9 @@
 import Event from './event'
-import { getMessageBrokerAdapter } from './broker'
+import type { MessageBrokerAdapter } from './message-broker'
+
+export interface ConsumerOptions {
+  consumerGroupNamespace?: string
+}
 
 type EitherEvent<T extends any[]> = T[number]
 type ArrayOfEvents = Array<typeof Event<any>>
@@ -37,9 +41,11 @@ const handleKafkaMessageError = (
   console.error(JSON.stringify({ message, topic, partition }, null, 2))
 }
 
-export const useConsumer = (groupId: string) => {
-  const consumerGroupNamespace = process.env.EVENTS_CONSUMER_GROUP_NAMESPACE
-  const adapter = getMessageBrokerAdapter()
+export const useConsumer = (
+  adapter: MessageBrokerAdapter,
+  groupId: string,
+  { consumerGroupNamespace }: ConsumerOptions = {}
+) => {
   const consumer = adapter.consumer({
     groupId: consumerGroupNamespace
       ? `${consumerGroupNamespace}-${groupId}`

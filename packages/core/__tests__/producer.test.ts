@@ -1,4 +1,3 @@
-import { setMessageBrokerAdapter } from '../broker'
 import { useProducer } from '../producer'
 import { TestEvent } from '../__mocks__/TestEvent'
 import Event from '../event'
@@ -11,11 +10,10 @@ describe('Producer', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    setMessageBrokerAdapter(adapterMock as any)
   })
 
   it('produces a single event', async () => {
-    const { produce } = useProducer()
+    const { produce } = useProducer(adapterMock as any)
     const event = new TestEvent({ foo: 'bar', testId: 1 })
 
     await produce({ event })
@@ -40,7 +38,7 @@ describe('Producer', () => {
   })
 
   it('produces multiple events', async () => {
-    const { produce } = useProducer()
+    const { produce } = useProducer(adapterMock as any)
     const event1 = new TestEvent({ foo: 'bar', testId: 1 })
     const event2 = new TestEvent({ foo: 'baz', testId: 2 })
 
@@ -56,18 +54,16 @@ describe('Producer', () => {
   })
 
   it('skips when disabled via env var', async () => {
-    process.env.KAFKA_DISABLE = 'true'
+    const { produce } = useProducer(adapterMock as any, { disableProducer: true })
     const debugSpy = jest.spyOn(console, 'debug').mockImplementation()
 
-    const { produce } = useProducer()
     await produce({ event: new TestEvent({ foo: 'bar', testId: 1 }) })
 
     expect(connect).not.toHaveBeenCalled()
     expect(send).not.toHaveBeenCalled()
-    expect(debugSpy).toHaveBeenCalledWith('Kafka is disabled')
+    expect(debugSpy).toHaveBeenCalledWith('Producing is disabled')
 
     debugSpy.mockRestore()
-    delete process.env.KAFKA_DISABLE
   })
 
   it('groups events by topic', async () => {
@@ -76,7 +72,7 @@ describe('Producer', () => {
       static routingKey = 'testId'
     }
 
-    const { produce } = useProducer()
+    const { produce } = useProducer(adapterMock as any)
     await produce({
       events: [
         new TestEvent({ foo: 'bar', testId: 1 }),

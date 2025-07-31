@@ -29,19 +29,4 @@ export interface MessageBrokerConsumer {
 export interface MessageBrokerAdapter {
   producer(): MessageBrokerProducer
   consumer(config: { groupId: string }): MessageBrokerConsumer
-}
-
-let adapter: MessageBrokerAdapter | null = null
-
-export const setMessageBrokerAdapter = (instance: MessageBrokerAdapter) => {
-  adapter = instance
-}
-
-export const getMessageBrokerAdapter = (): MessageBrokerAdapter => {
-  if (!adapter) {
-    throw new Error(
-      'Message broker adapter not set. Call setMessageBrokerAdapter() before using producer or consumer.'
-    )
-  }
-  return adapter
 } 

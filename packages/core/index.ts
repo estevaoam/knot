@@ -1,4 +1,3 @@
 export { default as Event } from './event'
-export { useConsumer } from './consumer'
-export { useProducer } from './producer'
-export * from './broker' 
+export { Vortex } from './vortex'
+export * from './message-broker' 

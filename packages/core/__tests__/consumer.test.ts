@@ -1,4 +1,3 @@
-import { setMessageBrokerAdapter } from '../broker'
 import { useConsumer } from '../consumer'
 import { TestEvent } from '../__mocks__/TestEvent'
 
@@ -19,11 +18,11 @@ describe('Consumer', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    setMessageBrokerAdapter(adapterMock as any)
+    // adapter passed directly to useConsumer calls
   })
 
   it('subscribes and starts consumer', async () => {
-    const { consume, start } = useConsumer('group')
+    const { consume, start } = useConsumer(adapterMock as any, 'group')
     await consume([TestEvent], () => { })
     await start()
 
@@ -34,7 +33,7 @@ describe('Consumer', () => {
 
   it('processes messages and calls handler', async () => {
     const handler = jest.fn()
-    const { consume, start } = useConsumer('group')
+    const { consume, start } = useConsumer(adapterMock as any, 'group')
     await consume([TestEvent], handler)
     await start()
 
@@ -55,7 +54,7 @@ describe('Consumer', () => {
   it('skips unknown events', async () => {
     const debugSpy = jest.spyOn(console, 'debug').mockImplementation()
 
-    const { consume, start } = useConsumer('group')
+    const { consume, start } = useConsumer(adapterMock as any, 'group')
     await consume([TestEvent], jest.fn())
     await start()
 
@@ -78,7 +77,7 @@ describe('Consumer', () => {
     jest.spyOn(console, 'error').mockImplementation()
     const failingHandler = jest.fn().mockRejectedValue(new Error('fail'))
 
-    const { consume, start } = useConsumer('group')
+    const { consume, start } = useConsumer(adapterMock as any, 'group')
     await consume([TestEvent], failingHandler)
     await start()
 
@@ -97,7 +96,7 @@ describe('Consumer', () => {
   })
 
   it('disconnects on consumer.stop', async () => {
-    const { start } = useConsumer('group')
+    const { start } = useConsumer(adapterMock as any, 'group')
     await start()
 
     const stopHandler = on.mock.calls.find(([event]) => event === 'consumer.stop')[1]

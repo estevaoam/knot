@@ -6,30 +6,44 @@ import {
   Message,
 } from '@vortex/core'
 
+export interface KafkaAdapterOptions {
+  brokers: string[]
+  username?: string
+  password?: string
+  ssl?: boolean
+  saslMechanism?: 'scram-sha-256' | 'scram-sha-512'
+  logLevel?: import('kafkajs').logLevel
+}
+
 export class KafkaAdapter implements MessageBrokerAdapter {
   private kafka: Kafka
 
-  constructor() {
-    const brokers = (process.env.KAFKA_BROKER_URL || '').split(',').filter(Boolean)
-
-    const devConfig = {
+  constructor({
+    brokers,
+    username,
+    password,
+    ssl = false,
+    saslMechanism = 'scram-sha-256',
+    logLevel: logLevelSetting = logLevel.ERROR,
+  }: KafkaAdapterOptions) {
+    const baseConfig: any = {
       brokers,
-      logLevel: logLevel.ERROR as const,
+      logLevel: logLevelSetting,
     }
 
-    const config = {
-      ...devConfig,
-      ssl: true,
-      sasl: {
-        mechanism: 'scram-sha-256' as const,
-        username: process.env.KAFKA_USERNAME,
-        password: process.env.KAFKA_PASSWORD,
-      },
+    if (ssl) {
+      baseConfig.ssl = true
     }
 
-    this.kafka = new Kafka(
-      process.env.NODE_ENV === 'development' ? devConfig : (config as any)
-    )
+    if (username && password) {
+      baseConfig.sasl = {
+        mechanism: saslMechanism,
+        username,
+        password,
+      }
+    }
+
+    this.kafka = new Kafka(baseConfig)
   }
 
   producer(): MessageBrokerProducer {
@@ -55,9 +69,7 @@ export class KafkaAdapter implements MessageBrokerAdapter {
             consumer.subscribe({ topic, fromBeginning })
           )
         ).then(() => void 0),
-      run: async ({
-        eachMessage,
-      }: {
+      run: async ({ eachMessage }: {
         eachMessage: (args: {
           topic: string
           partition: number

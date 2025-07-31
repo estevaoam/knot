@@ -1,5 +1,9 @@
 import Event from './event'
-import { getMessageBrokerAdapter } from './broker'
+import type { MessageBrokerAdapter } from './message-broker'
+
+export interface ProducerOptions {
+  disableProducer?: boolean
+}
 
 type ProduceParams<T> = {
   event?: Event<T>
@@ -13,7 +17,10 @@ type Message = {
 
 type MessagesPerTopic = Record<string, Message[]>
 
-export const useProducer = () => {
+export const useProducer = (
+  adapter: MessageBrokerAdapter,
+  { disableProducer = false }: ProducerOptions = {}
+) => {
   // Produces an event
   return {
     produce: async <T>({ event, events }: ProduceParams<T>) => {
@@ -47,15 +54,14 @@ export const useProducer = () => {
         })
       }
 
-      if (process.env.KAFKA_DISABLE && process.env.KAFKA_DISABLE === 'true') {
-        console.debug('Kafka is disabled')
+      if (disableProducer) {
+        console.debug('Producing is disabled')
       } else {
         console.debug('Producing message')
 
         for (const [topic, messages] of Object.entries(messagesPerTopic)) {
           console.debug({ topic, messages })
 
-          const adapter = getMessageBrokerAdapter()
           const producer = adapter.producer()
 
           await producer.connect()
