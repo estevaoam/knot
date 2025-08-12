@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "npm run test:core && npm run test:integration",
+    "test:core": "jest --testPathPattern \"packages/core/__tests__\"",
+    "test:integration": "jest --testPathPattern \"packages/kafka-adapter/__tests__/integration.*.test.ts\""
   },
   "keywords": [],
   "author": "",
