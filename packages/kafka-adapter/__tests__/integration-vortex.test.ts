@@ -31,12 +31,12 @@ describe('Vortex client integration (Kafka)', () => {
 
     const vortex = new Vortex({ adapter })
 
-    const { produce } = vortex.useProducer()
+    const { produce } = vortex.producer()
 
     // Ensure topic exists
     await produce({ event: new UserCreated({ id: 'bootstrap', name: 'bootstrap' }) })
 
-    const { consume, start } = vortex.useConsumer(`group-${Date.now()}`)
+    const { consume, start } = vortex.consumer(`group-${Date.now()}`)
 
     const receivedPromise = new Promise<UserCreated>((resolve) => {
       consume([UserCreated], async (event) => {

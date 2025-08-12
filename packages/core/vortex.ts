@@ -1,6 +1,6 @@
 import type { MessageBrokerAdapter } from './message-broker'
-import { useProducer as useProducerFunction } from './producer'
-import { useConsumer as useConsumerFunction } from './consumer'
+import { createProducer } from './producer'
+import { createConsumer } from './consumer'
 import type { Logger } from './logger'
 import { defaultLogger } from './logger'
 
@@ -24,11 +24,11 @@ export class Vortex {
     this.logger = logger
   }
 
-  useProducer() {
-    return useProducerFunction(this.adapter, { disableProducer: this.disableProducer, logger: this.logger })
+  producer() {
+    return createProducer(this.adapter, { disableProducer: this.disableProducer, logger: this.logger })
   }
 
-  useConsumer(groupId: string) {
-    return useConsumerFunction(this.adapter, groupId, { consumerGroupNamespace: this.consumerGroupNamespace, logger: this.logger })
+  consumer(groupId: string) {
+    return createConsumer(this.adapter, groupId, { consumerGroupNamespace: this.consumerGroupNamespace, logger: this.logger })
   }
 }

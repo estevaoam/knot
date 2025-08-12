@@ -44,7 +44,7 @@ const handleKafkaMessageError = (
   logger.error(JSON.stringify({ message, topic, partition }, null, 2))
 }
 
-export const useConsumer = (
+export const createConsumer = (
   adapter: MessageBrokerAdapter,
   groupId: string,
   { consumerGroupNamespace, logger = defaultLogger }: ConsumerOptions = {}

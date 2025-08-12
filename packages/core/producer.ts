@@ -20,13 +20,12 @@ type Message = {
 
 type MessagesPerTopic = Record<string, Message[]>
 
-export const useProducer = (
+export const createProducer = (
   adapter: MessageBrokerAdapter,
   { disableProducer = false, logger = defaultLogger }: ProducerOptions = {}
 ) => {
   // Produces an event
-  return {
-    produce: async <T>({ event, events }: ProduceParams<T>) => {
+  const produce = async <T>({ event, events }: ProduceParams<T>) => {
       const messagesPerTopic: MessagesPerTopic = {}
       if (!events) {
         if (event) {
@@ -74,6 +73,9 @@ export const useProducer = (
           })
         }
       }
-    },
+    }
+
+  return {
+    produce,
   }
 }
