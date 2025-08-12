@@ -1,9 +1,10 @@
 {
-  "name": "@vortex/kafka-adapter",
+  "name": "@knot/kafka-adapter",
   "version": "1.0.0",
   "main": "dist/index.js",
   "license": "Apache-2.0",
   "dependencies": {
-    "kafkajs": "^2.2.4"
+    "kafkajs": "^2.2.4",
+    "@knot/core": "1.0.0"
   }
 } 

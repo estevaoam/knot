@@ -1,6 +1,6 @@
-## ⚡️ Vortex
+## ⚡️ Knot
 
-Build event‑driven applications in TypeScript with a clean, strongly‑typed API. Vortex lets you define domain events once and plug in any message broker via adapters.
+Build event‑driven applications in TypeScript with a clean, strongly‑typed API. Knot lets you define domain events once and plug in any message broker via adapters.
 
 ## ✨ Features
 
@@ -13,7 +13,7 @@ Build event‑driven applications in TypeScript with a clean, strongly‑typed A
 Install the core and your preferred adapter.
 
 ```bash
-npm install @vortex/core @vortex/kafka-adapter
+npm install @knot/core @knot/kafka-adapter
 ```
 
 ## 🚀 Quickstart
@@ -21,7 +21,7 @@ npm install @vortex/core @vortex/kafka-adapter
 ### 1) Define an event
 
 ```ts
-import { Event } from '@vortex/core'
+import { Event } from '@knot/core'
 
 type UserCreatedPayload = {
   id: string
@@ -34,13 +34,13 @@ export class UserCreated extends Event<UserCreatedPayload> {
 }
 ```
 
-### 2) Bootstrap Vortex with an adapter
+### 2) Bootstrap Knot with an adapter
 
 ```ts
-import { Vortex } from '@vortex/core'
-import { KafkaAdapter } from '@vortex/kafka-adapter'
+import { Knot } from '@knot/core'
+import { KafkaAdapter } from '@knot/kafka-adapter'
 
-const vortex = new Vortex({
+const knot = new Knot({
   adapter: new KafkaAdapter({ brokers: ['localhost:9092'] }),
 })
 ```
@@ -50,7 +50,7 @@ const vortex = new Vortex({
 ```ts
 import { UserCreated } from './events/UserCreated'
 
-const { produce } = vortex.producer()
+const { produce } = knot.producer()
 
 const event = new UserCreated({ id: '42', name: 'Ada' })
 await produce({ event })
@@ -61,7 +61,7 @@ await produce({ event })
 ```ts
 import { UserCreated } from './events/UserCreated'
 
-const consumer = vortex.consumer('analytics')
+const consumer = knot.consumer('analytics')
 
 await consumer.consume([UserCreated], async (event) => {
   const { id, name } = (event as UserCreated).payload
@@ -87,15 +87,15 @@ await produce({
 ### Consumer groups and options
 
 ```ts
-import { Vortex } from '@vortex/core'
-import { KafkaAdapter } from '@vortex/kafka-adapter'
+import { Knot } from '@knot/core'
+import { KafkaAdapter } from '@knot/kafka-adapter'
 
-const vortex = new Vortex({
+const knot = new Knot({
   adapter: new KafkaAdapter({ brokers: ['localhost:9092'] }),
   consumerGroupNamespace: 'myapp',
 })
 
-const consumer = vortex.consumer('analytics')
+const consumer = knot.consumer('analytics')
 await consumer.start({ fromBeginning: true }) // will start consume from the beginning
 ```
 
@@ -104,7 +104,7 @@ await consumer.start({ fromBeginning: true }) // will start consume from the beg
 You can also disable producing globally (useful in dry‑runs):
 
 ```ts
-const vortex = new Vortex({
+const knot = new Knot({
   adapter: new KafkaAdapter({ brokers: ['localhost:9092'] }),
   disableProducer: true,
 })
@@ -112,13 +112,13 @@ const vortex = new Vortex({
 
 ### Logging
 
-Provide your own logger by implementing the `Logger` interface and passing it to `Vortex`.
+Provide your own logger by implementing the `Logger` interface and passing it to `Knot`.
 
 ```ts
-import { Vortex, ConsoleLogger } from '@vortex/core'
-import { KafkaAdapter } from '@vortex/kafka-adapter'
+import { Knot, ConsoleLogger } from '@knot/core'
+import { KafkaAdapter } from '@knot/kafka-adapter'
 
-const vortex = new Vortex({
+const knot = new Knot({
   adapter: new KafkaAdapter({ brokers: ['localhost:9092'] }),
   logger: new ConsoleLogger(), // this is default, or use your own logger
 })
@@ -129,7 +129,7 @@ const vortex = new Vortex({
 Configure the Kafka adapter with your brokers. SASL/SSL map directly to `kafkajs` options.
 
 ```ts
-import { KafkaAdapter } from '@vortex/kafka-adapter'
+import { KafkaAdapter } from '@knot/kafka-adapter'
 
 const adapter = new KafkaAdapter({
   brokers: ['localhost:9092'],
@@ -147,7 +147,7 @@ Your adapter should expose `producer()` and `consumer({ groupId })` compatible w
   - static `aggregateRoot: string`
   - static `routingKey: string`
 
-- **Vortex(options)**
+- **Knot(options)**
   - `adapter: MessageBrokerAdapter`
   - `disableProducer?: boolean`
   - `consumerGroupNamespace?: string`

@@ -4,7 +4,7 @@ import {
   MessageBrokerProducer,
   MessageBrokerConsumer,
   Message,
-} from '@vortex/core'
+} from '@knot/core'
 
 export interface KafkaAdapterOptions {
   brokers: string[]

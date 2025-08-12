@@ -1,4 +1,4 @@
-import { Vortex, Event } from '../../core/index'
+import { Knot, Event } from '../../core/index'
 import { KafkaAdapter } from '../index'
 import { MessageBrokerProducer, MessageBrokerConsumer } from '../../core/message-broker'
 
@@ -9,11 +9,10 @@ class UserCreated extends Event<{ id: string; name: string }> {
   static routingKey = 'id'
 }
 
-describe('Vortex client integration (Kafka)', () => {
-  it('produces and consumes events through Vortex API', async () => {
+describe('Knot client integration (Kafka)', () => {
+  it('produces and consumes events through Knot API', async () => {
     const adapter = new KafkaAdapter({ brokers: ['localhost:9092'] })
 
-    // Capture all producers/consumers created by Vortex so we can close them later
     const openProducers: MessageBrokerProducer[] = []
     let consumerHandle: MessageBrokerConsumer | undefined
 
@@ -29,14 +28,13 @@ describe('Vortex client integration (Kafka)', () => {
         return consumerHandle!
       }
 
-    const vortex = new Vortex({ adapter })
+    const knot = new Knot({ adapter })
 
-    const { produce } = vortex.producer()
+    const { produce } = knot.producer()
 
-    // Ensure topic exists
     await produce({ event: new UserCreated({ id: 'bootstrap', name: 'bootstrap' }) })
 
-    const { consume, start } = vortex.consumer(`group-${Date.now()}`)
+    const { consume, start } = knot.consumer(`group-${Date.now()}`)
 
     const receivedPromise = new Promise<UserCreated>((resolve) => {
       consume([UserCreated], async (event) => {
@@ -53,7 +51,6 @@ describe('Vortex client integration (Kafka)', () => {
     const received = await receivedPromise
     expect(received.payload).toEqual(realEvent.payload)
 
-    // Teardown: disconnect consumer and producers
     if (consumerHandle) {
       await consumerHandle.disconnect()
     }
@@ -62,3 +59,5 @@ describe('Vortex client integration (Kafka)', () => {
     )
   })
 })
+
+

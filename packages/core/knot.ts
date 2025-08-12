@@ -4,20 +4,20 @@ import { createConsumer } from './consumer'
 import type { Logger } from './logger'
 import { defaultLogger } from './logger'
 
-export interface VortexOptions {
+export interface KnotOptions {
   adapter: MessageBrokerAdapter
   disableProducer?: boolean
   consumerGroupNamespace?: string
   logger?: Logger
 }
 
-export class Vortex {
+export class Knot {
   private disableProducer?: boolean
   private consumerGroupNamespace?: string
   private adapter: MessageBrokerAdapter
   private logger: Logger
 
-  constructor({ adapter, disableProducer, consumerGroupNamespace, logger = defaultLogger }: VortexOptions) {
+  constructor({ adapter, disableProducer, consumerGroupNamespace, logger = defaultLogger }: KnotOptions) {
     this.adapter = adapter
     this.disableProducer = disableProducer
     this.consumerGroupNamespace = consumerGroupNamespace
@@ -32,3 +32,5 @@ export class Vortex {
     return createConsumer(this.adapter, groupId, { consumerGroupNamespace: this.consumerGroupNamespace, logger: this.logger })
   }
 }
+
+
