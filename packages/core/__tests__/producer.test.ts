@@ -1,4 +1,5 @@
 import { createProducer } from '../producer'
+import { ConsoleLogger } from '../logger'
 import { TestEvent } from '../__mocks__/TestEvent'
 import Event from '../event'
 
@@ -54,7 +55,10 @@ describe('Producer', () => {
   })
 
   it('skips when disabled via env var', async () => {
-    const { produce } = createProducer(adapterMock as any, { disableProducer: true })
+    const { produce } = createProducer(adapterMock as any, {
+      disableProducer: true,
+      logger: new ConsoleLogger('debug'),
+    })
     const debugSpy = jest.spyOn(console, 'debug').mockImplementation()
 
     await produce({ event: new TestEvent({ foo: 'bar', testId: 1 }) })

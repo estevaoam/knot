@@ -1,4 +1,5 @@
 import { createConsumer } from '../consumer'
+import { ConsoleLogger } from '../logger'
 import { TestEvent } from '../__mocks__/TestEvent'
 
 describe('Consumer', () => {
@@ -22,7 +23,9 @@ describe('Consumer', () => {
   })
 
   it('subscribes and starts consumer', async () => {
-    const { consume, start } = createConsumer(adapterMock as any, 'group')
+    const { consume, start } = createConsumer(adapterMock as any, 'group', {
+      logger: new ConsoleLogger('debug')
+    })
     await consume([TestEvent], () => { })
     await start()
 
@@ -33,7 +36,9 @@ describe('Consumer', () => {
 
   it('processes messages and calls handler', async () => {
     const handler = jest.fn()
-    const { consume, start } = createConsumer(adapterMock as any, 'group')
+    const { consume, start } = createConsumer(adapterMock as any, 'group', {
+      logger: new ConsoleLogger('debug'),
+    })
     await consume([TestEvent], handler)
     await start()
 
@@ -54,7 +59,9 @@ describe('Consumer', () => {
   it('skips unknown events', async () => {
     const debugSpy = jest.spyOn(console, 'debug').mockImplementation()
 
-    const { consume, start } = createConsumer(adapterMock as any, 'group')
+    const { consume, start } = createConsumer(adapterMock as any, 'group', {
+      logger: new ConsoleLogger('debug'),
+    })
     await consume([TestEvent], jest.fn())
     await start()
 
