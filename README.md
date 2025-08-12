@@ -1,4 +1,4 @@
-## ⚡️ Knot
+## 🪢 Knot
 
 Build event‑driven applications in TypeScript with a clean, strongly‑typed API. Knot lets you define domain events once and plug in any message broker via adapters.
 
