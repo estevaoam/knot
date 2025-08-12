@@ -28,7 +28,7 @@ You should see final balances per generated account and a validation status (OK/
 ### Files
 
 - `examples/bank-account/events.ts`: event definitions
-- `examples/bank-account/data.ts`: fake data generation and balance validation
+- `examples/bank-account/bank-account.ts`: account model, data generation, observed-balance updates, and validation
 - `examples/bank-account/main.ts`: bootstraps Knot, produces/consumes events, and prints results
 
 ### Define events
@@ -55,29 +55,22 @@ const knot = new Knot({
 
 ### Consume and update balances
 
-`main.ts` declares a small handler used in `consume` to update the in‑memory balances and count processed events.
+`main.ts` calls the instance method `account.applyEvent(event)` to update each account's in‑memory balance and count processed events.
 
-```33:45:examples/bank-account/main.ts
-const updateAccountBalance = (event: Deposit | Withdraw) => {
-  const payload: DepositPayload | WithdrawPayload = (event as Deposit | Withdraw).payload
-
-  if (payload.accountId === 'bootstrap') return
-  if (!targetAccountIds.has(payload.accountId)) return
-
-  const current = observedBalances.get(payload.accountId) ?? 0
-  const next = event instanceof Deposit ? current + payload.amount : current - payload.amount
-
-  observedBalances.set(payload.accountId, next)
-
-  processedEvents += 1
-}
-```
-
-```47:53:examples/bank-account/main.ts
+```31:45:examples/bank-account/main.ts
 const allEventsProcessed = new Promise<void>((resolve) => {
   consume([Deposit, Withdraw], (event) => {
-    updateAccountBalance(event as Deposit | Withdraw)
-    if (processedEvents >= totalEvents) resolve()
+    console.log(`Consumed event: ${event.payload.accountId} ${event.payload.amount}`)
+    const payload = event.payload
+    const account = accountById.get(payload.accountId)
+    if (!account) return
+
+    const updated = account.applyEvent(event)
+
+    if (updated) {
+      processedEvents += 1
+      if (processedEvents >= totalEvents) resolve()
+    }
   })
 })
 ```
@@ -86,24 +79,28 @@ const allEventsProcessed = new Promise<void>((resolve) => {
 
 Each generated transaction is turned into a `Deposit` or `Withdraw` event and produced individually.
 
-```57:65:examples/bank-account/main.ts
-for (const { accountId, transactions } of accounts) {
+```49:58:examples/bank-account/main.ts
+console.log(`Producing ${totalEvents} events...`)
+for (const { id, transactions } of accounts) {
   for (const transaction of transactions) {
     const eventToProduce = transaction.type === 'deposit'
-      ? new Deposit({ accountId, amount: transaction.amount })
-      : new Withdraw({ accountId, amount: transaction.amount })
+      ? new Deposit({ accountId: id, amount: transaction.amount })
+      : new Withdraw({ accountId: id, amount: transaction.amount })
 
-    await produce({ event: eventToProduce })
+    produce({ event: eventToProduce })
+    console.log(`Produced event: ${eventToProduce.payload.accountId} ${eventToProduce.payload.amount}`)
   }
 }
 ```
 
 ### Validate results
 
-Validation compares the observed balances (from consumed events) with the expected balances (derived from the generated transactions).
+Validation compares the observed balances (from consumed events) with the expected balances (derived from the generated transactions) using per-account instance methods.
 
-```69:73:examples/bank-account/main.ts
-const { lines, allMatch } = validateBalances(observedBalances, expectedBalances)
+```64:70:examples/bank-account/main.ts
+const perAccount = accounts.map((a) => a.validateBalance())
+const lines = perAccount.map((r) => r.line)
+const allMatch = perAccount.every((r) => r.match)
 
 console.log('Final balances:')
 for (const l of lines) console.log(' - ' + l)

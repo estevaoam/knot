@@ -1,17 +1,16 @@
-import { Deposit, Withdraw, type DepositPayload, type WithdrawPayload } from './events'
+import { Deposit, Withdraw } from './events'
 import { Knot } from '../../packages/core/index'
 import { KafkaAdapter } from '../../packages/kafka-adapter/index'
-import { generateAccountsWithTransactions, computeExpectedBalances, validateBalances } from './data'
+import { BankAccount } from './bank-account'
 
 const main = async () => {
   const knot = new Knot({
     adapter: new KafkaAdapter({ brokers: ['localhost:9092'] }),
   })
 
-  const accounts = generateAccountsWithTransactions()
-  const expectedBalances = computeExpectedBalances(accounts)
+  const accounts = BankAccount.generateMany()
   const totalEvents = accounts.reduce((acc, a) => acc + a.transactions.length, 0)
-  const targetAccountIds = new Set(accounts.map((a) => a.accountId))
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
 
   const topic = Deposit.aggregateRoot
   const groupId = `bank-analytics-${Date.now()}`
@@ -27,46 +26,44 @@ const main = async () => {
 
   const { consume, start } = knot.consumer(groupId)
 
-  const observedBalances = new Map<string, number>()
   let processedEvents = 0
-
-  const updateAccountBalance = (event: Deposit | Withdraw) => {
-    const payload: DepositPayload | WithdrawPayload = (event as Deposit | Withdraw).payload
-
-    if (payload.accountId === 'bootstrap') return
-    if (!targetAccountIds.has(payload.accountId)) return
-
-    const current = observedBalances.get(payload.accountId) ?? 0
-    const next = event instanceof Deposit ? current + payload.amount : current - payload.amount
-
-    observedBalances.set(payload.accountId, next)
-
-    processedEvents += 1
-  }
 
   const allEventsProcessed = new Promise<void>((resolve) => {
     consume([Deposit, Withdraw], (event) => {
-      updateAccountBalance(event as Deposit | Withdraw)
+      console.log(`Consumed event: ${event.payload.accountId} ${event.payload.amount}`)
+      const payload = event.payload
+      const account = accountById.get(payload.accountId)
+      if (!account) return
 
-      if (processedEvents >= totalEvents) resolve()
+      const updated = account.applyEvent(event)
+
+      if (updated) {
+        processedEvents += 1
+        if (processedEvents >= totalEvents) resolve()
+      }
     })
   })
 
-  await start({ fromBeginning: true })
+  await start()
 
-  for (const { accountId, transactions } of accounts) {
+  console.log(`Producing ${totalEvents} events...`)
+  for (const { id, transactions } of accounts) {
     for (const transaction of transactions) {
       const eventToProduce = transaction.type === 'deposit'
-        ? new Deposit({ accountId, amount: transaction.amount })
-        : new Withdraw({ accountId, amount: transaction.amount })
+        ? new Deposit({ accountId: id, amount: transaction.amount })
+        : new Withdraw({ accountId: id, amount: transaction.amount })
 
-      await produce({ event: eventToProduce })
+      produce({ event: eventToProduce })
+      console.log(`Produced event: ${eventToProduce.payload.accountId} ${eventToProduce.payload.amount}`)
     }
   }
 
+  console.log('Waiting for all events to be processed...')
   await allEventsProcessed
 
-  const { lines, allMatch } = validateBalances(observedBalances, expectedBalances)
+  const perAccount = accounts.map((a) => a.validateBalance())
+  const lines = perAccount.map((r) => r.line)
+  const allMatch = perAccount.every((r) => r.match)
 
   console.log('Final balances:')
   for (const l of lines) console.log(' - ' + l)
