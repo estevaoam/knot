@@ -4,9 +4,9 @@ Build event‑driven applications in TypeScript with a clean, strongly‑typed A
 
 ## ✨ Features
 
-- **Broker‑agnostic core**: swap Kafka for Redis/NATS/RabbitMQ (coming soon) by changing the adapter.
 - **Strongly‑typed events**: model your domain with typed payloads.
 - **Simple producer/consumer APIs**: minimal surface area, easy to test.
+- **Broker‑agnostic core**: swap Kafka for Redis/NATS/RabbitMQ (coming soon) by changing the adapter.
 
 ## 📦 Installation
 
@@ -61,14 +61,15 @@ await produce({ event })
 ```ts
 import { UserCreated } from './events/UserCreated'
 
-const consumer = knot.consumer('analytics')
+const { consume, start } = knot.consumer('analytics')
 
-await consumer.consume([UserCreated], async (event) => {
+// Declare a handler for the events
+consume([UserCreated], async (event) => {
   const { id, name } = (event as UserCreated).payload
   console.log(id, name)
 })
 
-await consumer.start() // will start consume
+await start() // will start consuming from the topics
 ```
 
 ## 🧩 Advanced usage
@@ -95,8 +96,11 @@ const knot = new Knot({
   consumerGroupNamespace: 'myapp',
 })
 
-const consumer = knot.consumer('analytics')
-await consumer.start({ fromBeginning: true }) // will start consume from the beginning
+const { start, consume } = knot.consumer('analytics')
+
+// consume(...)
+
+await start({ fromBeginning: true }) // will start consume from the beginning
 ```
 
 `consumerGroupNamespace` prefixes your group IDs, helpful when running multiple environments against the same cluster.
