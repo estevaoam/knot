@@ -1,8 +1,11 @@
 import Event from './event'
 import type { MessageBrokerAdapter } from './message-broker'
+import type { Logger } from './logger'
+import { defaultLogger } from './logger'
 
 export interface ConsumerOptions {
   consumerGroupNamespace?: string
+  logger?: Logger
 }
 
 type EitherEvent<T extends any[]> = T[number]
@@ -33,18 +36,18 @@ const handleKafkaMessageError = (
   message: string,
   topic: string,
   partition: number
-) => {
-  console.error('Error processing event')
-  console.error(error)
+) => (logger: Logger) => {
+  logger.error('Error processing event')
+  logger.error(error)
 
-  console.error('Event details:')
-  console.error(JSON.stringify({ message, topic, partition }, null, 2))
+  logger.error('Event details:')
+  logger.error(JSON.stringify({ message, topic, partition }, null, 2))
 }
 
 export const useConsumer = (
   adapter: MessageBrokerAdapter,
   groupId: string,
-  { consumerGroupNamespace }: ConsumerOptions = {}
+  { consumerGroupNamespace, logger = defaultLogger }: ConsumerOptions = {}
 ) => {
   const consumer = adapter.consumer({
     groupId: consumerGroupNamespace
@@ -71,11 +74,11 @@ export const useConsumer = (
       const topics = Array.from(new Set(Object.keys(eventMapping)))
 
       await consumer.subscribe({ topics, fromBeginning })
-      console.info('Subscribed to topics: ' + topics)
+      logger.info('Subscribed to topics: ' + topics)
 
       consumer.on('consumer.crash', (error) => {
-        console.error('Consumer crashed')
-        console.error(error)
+        logger.error('Consumer crashed')
+        logger.error(error)
       })
 
       consumer.on('consumer.stop', async () => {
@@ -90,7 +93,7 @@ export const useConsumer = (
               metadata: { event: eventClassName },
             } = eventMessage
 
-            console.debug(
+            logger.debug(
               `Kafka message received: ${JSON.stringify(
                 {
                   topic,
@@ -106,7 +109,7 @@ export const useConsumer = (
 
             const mapping = eventMapping[topic][eventClassName]
             if (!mapping) {
-              console.debug(`Skipping event ${eventClassName}...`)
+              logger.debug(`Skipping event ${eventClassName}...`)
               return
             }
 
@@ -115,7 +118,7 @@ export const useConsumer = (
             const EventClass = eventClass.prototype
               .constructor as EventClassConstructor<any>
 
-            console.debug(JSON.stringify(eventClass, null, 2))
+            logger.debug(JSON.stringify(eventClass, null, 2))
 
             const { payload } = eventMessage
             const event: Event = new EventClass(payload)
@@ -130,7 +133,7 @@ export const useConsumer = (
                     message.value.toString(),
                     topic,
                     partition
-                  )
+                  )(logger)
                 }
               })
             )
@@ -140,7 +143,7 @@ export const useConsumer = (
               message.value.toString(),
               topic,
               partition
-            )
+            )(logger)
           }
         },
       })

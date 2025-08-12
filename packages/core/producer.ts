@@ -1,8 +1,11 @@
 import Event from './event'
 import type { MessageBrokerAdapter } from './message-broker'
+import type { Logger } from './logger'
+import { defaultLogger } from './logger'
 
 export interface ProducerOptions {
   disableProducer?: boolean
+  logger?: Logger
 }
 
 type ProduceParams<T> = {
@@ -19,7 +22,7 @@ type MessagesPerTopic = Record<string, Message[]>
 
 export const useProducer = (
   adapter: MessageBrokerAdapter,
-  { disableProducer = false }: ProducerOptions = {}
+  { disableProducer = false, logger = defaultLogger }: ProducerOptions = {}
 ) => {
   // Produces an event
   return {
@@ -55,12 +58,12 @@ export const useProducer = (
       }
 
       if (disableProducer) {
-        console.debug('Producing is disabled')
+        logger.debug('Producing is disabled')
       } else {
-        console.debug('Producing message')
+        logger.debug('Producing message')
 
         for (const [topic, messages] of Object.entries(messagesPerTopic)) {
-          console.debug({ topic, messages })
+          logger.debug({ topic, messages })
 
           const producer = adapter.producer()
 
